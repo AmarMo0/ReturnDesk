@@ -1,5 +1,7 @@
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+from .orders import Order
 
 from agent import nodes
 from agent.routing import route_after_investigator
@@ -34,4 +36,4 @@ def build_graph():
     builder.add_edge("wait_for_customer", "router")
     builder.add_edge("fallback", END)
 
-    return builder.compile(checkpointer=MemorySaver())
+    return builder.compile(checkpointer=MemorySaver(serde=JsonPlusSerializer(allowed_msgpack_modules=[Order])))
