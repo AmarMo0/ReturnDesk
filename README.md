@@ -1,4 +1,4 @@
-# Customer Support Bot (LangGraph)
+# ReturnDesk 
 
 A customer support bot for two requests: **returning an item** and **replacing one that arrived damaged**.
 
