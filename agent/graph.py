@@ -4,7 +4,10 @@ from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from .orders import Order
 
 from agent import nodes
-from agent.routing import route_after_investigator
+from agent.routing import (
+    route_after_router,
+    route_after_respond,
+    route_after_investigator)
 from agent.state import State
 
 
@@ -14,26 +17,42 @@ def build_graph():
     builder.add_node("router", nodes.router)
     builder.add_node("investigator", nodes.investigator)
     builder.add_node("check_policy", nodes.check_policy)
-    builder.add_node("ask_order_number", nodes.ask_order_number)
-    builder.add_node("wait_for_customer", nodes.wait_for_customer)
     builder.add_node("fallback", nodes.fallback)
     builder.add_node("respond", nodes.respond)
+    builder.add_node("confirm_case", nodes.confirm_case)
+    builder.add_node("open_case", nodes.open_case)
+
 
     builder.add_edge(START, "router")
-    builder.add_edge("router", "investigator")
     builder.add_conditional_edges(
-        "investigator",
-        route_after_investigator,
+    "router",
+    route_after_router,
         {
-            "check_policy": "check_policy",
-            "ask_order_number": "ask_order_number",
-            "fallback": "fallback",
+        "investigator": "investigator",
+        "fallback": "fallback",
         },
     )
+    builder.add_conditional_edges(
+    "investigator",
+    route_after_investigator,
+    {
+        "check_policy": "check_policy",
+        "fallback": "fallback",
+    },
+)
+
     builder.add_edge("check_policy", "respond")
-    builder.add_edge("respond", END)
-    builder.add_edge("ask_order_number", "wait_for_customer")
-    builder.add_edge("wait_for_customer", "router")
+
+    builder.add_conditional_edges(
+        "respond",
+        route_after_respond,
+        {
+            "confirm_case": "confirm_case",
+            "end": END
+        }
+    )
     builder.add_edge("fallback", END)
+    builder.add_edge("open_case", END)
+
 
     return builder.compile(checkpointer=MemorySaver(serde=JsonPlusSerializer(allowed_msgpack_modules=[Order])))
